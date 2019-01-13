@@ -1,0 +1,2 @@
+# MS_office_python
+マイクロソフトオフィスの仕事をpythonで効率化します
