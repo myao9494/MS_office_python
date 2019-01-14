@@ -1,0 +1,8 @@
+slide_id,shape_id,text
+256,2,"Hello, World!"
+256,3,python-pptx was here!
+257,2,報告書
+257,3,
+258,2,
+258,3,
+258,4,"[['District', 'Population', 'Ratio'], ['Hampshire', '25,000', '1.6'], ['Dorset', '500,000', '7.3'], ['Wiltshire', '735,298', '3.7'], ['Worcestershire', '12,653', '8.2']]"
