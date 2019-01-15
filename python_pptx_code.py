@@ -7,15 +7,20 @@
 from pptx import Presentation
 import pandas as pd
 import pd2ppt
+import os
 
 class pptx(object):
     '''
     pythonでパワポ作業を効率化するクラスです
     '''
-    def __init__(self,file_name=""):
-        self.ppt = Presentation(file_name)
-        self.csv_file_path = "temp/temp.csv"
-        self.file_name = file_name
+    def __init__(self,file_path=""):
+        self.file_path = file_path
+        self.ppt = Presentation(file_path)
+        self.foldr_path = os.path.dirname(self.file_path)
+        self.file_name = os.path.basename(self.file_path)
+        self.name, self.ext = os.path.splitext(self.file_name)
+        self.df_ppt = self._make_df()
+        self.csv_file_path = os.path.join(self.foldr_path,"temp",self.name+".csv" )
 
     def add_table_from_df(self,df):
         """pandasのデータフレームをパワポに流し込みます。先に流し込みたいpptxを指定しておくこと
@@ -28,28 +33,17 @@ class pptx(object):
         # pd2ppt.df_to_table(slide,df, col_formatters=['', ',', '.2'],rounding=['', 3, ''])
         pd2ppt.df_to_table(slide,df)
         try:
-            self.ppt.save(self.file_name)
+            self.ppt.save(self.file_path)
+            print("上書きしました")
         except:
-            print("No file_name")
+            print("No file_path")
 
     def pptx_to_csv(self):
         """pptxのテキストとテーブルのデータをself.csv_file_pathに吐き出します
         """
-        li = []
-        for slide in self.ppt.slides:
-            for shape in slide.shapes:
-                if shape.has_text_frame:
-                    li.append([slide.slide_id,shape.shape_id, shape.text])
-                if shape.has_table:
-                    aaa= shape
-                    li.append([slide.slide_id,shape.shape_id,self._read_table(shape.table)])
-        df_a = pd.DataFrame(li)
-        df_a.columns=["slide_id","shape_id","text"]
-        df_a.to_csv(self.csv_file_path ,index=False)
-        try:
-            self.ppt.save(self.file_name)
-        except:
-            print("No file_name")
+
+        self.df_ppt.to_csv(self.csv_file_path ,index=False)
+        print(self.csv_file_path+"にcsvを保存しました")
 
     def csv_to_pptx(self):
         """diffを見てcsvを編集した際に、これを実行すればpptxに反映される（テーブル未対応）
@@ -72,8 +66,25 @@ class pptx(object):
             print("変更なし")
         else:
             print("パワポを更新しました")
-            self.ppt.save('test3.pptx')
+            self.ppt.save(self.file_path)
 
+    def _make_df(self):
+        """self.file_pathのパワポからpandas dataframeを作成します（文字と表のみ）
+        
+        Returns:
+            pandas dataframe -- pptxから抽出されたdataframeです
+        """
+
+        li = []
+        for slide in self.ppt.slides:
+            for shape in slide.shapes:
+                if shape.has_text_frame:
+                    li.append([slide.slide_id,shape.shape_id, shape.text])
+                if shape.has_table:
+                    li.append([slide.slide_id,shape.shape_id,self._read_table(shape.table)])
+        df_a = pd.DataFrame(li)
+        df_a.columns=["slide_id","shape_id","text"]
+        return df_a
 
     def _read_table(self,tbl):
         """tableのデータを読み込みます
