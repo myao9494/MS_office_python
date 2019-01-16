@@ -49,18 +49,19 @@ class pptx(object):
         """diffを見てcsvを編集した際に、これを実行すればpptxに反映される（テーブル未対応）
         """
 
-        df_t = pd.read_csv(self.csv_file_path)
+        df_t = pd.read_csv(self.csv_file_path, dtype = 'object')
         li_henko = df_t.values.tolist()
         hata = 0
         for elm in li_henko:
-            taisho_shape = self._find_shape(elm[0],elm[1])
-            if taisho_shape.has_text_frame:
-                if taisho_shape.text != elm[2] and isinstance(elm[2], str):
-                    print("変更  :  " + taisho_shape.text +" → "+ str(elm[2]))
-                    taisho_shape.text = elm[2]
-                    hata = 1
-        #     if taisho_shape.has_table:
-        #             write_table(taisho_shape.table,elm)
+            if elm[0].find("------slide ") == -1:
+                taisho_shape = self._find_shape(int(elm[0]),int(elm[1]))
+                if taisho_shape.has_text_frame:
+                    if taisho_shape.text != elm[2] and isinstance(elm[2], str):
+                        print("変更  :  " + taisho_shape.text +" → "+ str(elm[2]))
+                        taisho_shape.text = elm[2]
+                        hata = 1
+            #     if taisho_shape.has_table:
+            #             write_table(taisho_shape.table,elm)
 
         if hata == 0:
             print("変更なし")
@@ -74,14 +75,22 @@ class pptx(object):
         Returns:
             pandas dataframe -- pptxから抽出されたdataframeです
         """
-
+        i = 1
         li = []
         for slide in self.ppt.slides:
+            li.append(["------slide " + str(i) + "---------","",""])
             for shape in slide.shapes:
                 if shape.has_text_frame:
-                    li.append([slide.slide_id,shape.shape_id, shape.text])
+                    li.append([str(slide.slide_id),str(shape.shape_id), shape.text])
                 if shape.has_table:
-                    li.append([slide.slide_id,shape.shape_id,self._read_table(shape.table)])
+                    table = self._read_table(shape.table)
+                    li.append([str(slide.slide_id),str(shape.shape_id),"table"])
+                    for retu in table:
+                        tex = ""
+                        for moji in retu:
+                            tex = tex + " , " + moji
+                        li.append([slide.slide_id,shape.shape_id,tex])
+            i += 1
         df_a = pd.DataFrame(li)
         df_a.columns=["slide_id","shape_id","text"]
         return df_a
